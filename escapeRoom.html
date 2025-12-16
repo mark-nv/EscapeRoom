@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.R.I.A. System Lockdown - Escape Room</title>
+    <style>
+        /* General Styling for a 'System/Terminal' Look */
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #000000;
+            color: #00FF00;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 2px solid #00FF00;
+            padding: 30px;
+            box-shadow: 0 0 10px #00FF00;
+        }
+        h1, h2, h3 {
+            color: #00FF00;
+            border-bottom: 1px dashed #008000;
+            padding-bottom: 10px;
+        }
+        p, li {
+            text-align: left;
+            margin: 10px 0;
+        }
+        /* Stage Styling */
+        .stage {
+            border: 1px solid #008000;
+            padding: 20px;
+            margin-top: 30px;
+            background-color: rgba(0, 50, 0, 0.2);
+            transition: opacity 0.5s ease;
+        }
+        .stage.hidden {
+            display: none;
+        }
+        /* Input and Button Styling */
+        input[type="text"] {
+            font-family: 'Courier New', monospace;
+            background-color: #000000;
+            color: #00FF00;
+            border: 1px solid #00FF00;
+            padding: 10px;
+            width: 80%;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+        button {
+            font-family: 'Courier New', monospace;
+            background-color: #008000;
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #00FF00;
+            color: #000000;
+        }
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 20px;
+        }
+        .success {
+            color: #FFFF00;
+        }
+        .error {
+            color: #FF0000;
+        }
+        /* Specific Puzzle Styling */
+        #riddles-list {
+            list-style-type: none;
+            padding-left: 0;
+            text-align: center;
+        }
+        #riddles-list li {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #wordle-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            gap: 5px;
+            margin: 20px auto;
+            width: fit-content;
+        }
+        .wordle-letter {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #00FF00;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .green { background-color: #008000; border-color: #00FF00; } /* Correct letter & position */
+        .yellow { background-color: #808000; border-color: #FFFF00; } /* Correct letter, wrong position */
+        .grey { background-color: #333333; border-color: #555555; } /* Not in word */
+        
+        /* Auto-advance Input Styling */
+        .input-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .char-input {
+            width: 40px;
+            height: 50px;
+            font-size: 24px;
+            text-align: center;
+            background-color: #000;
+            color: #00FF00;
+            border: 2px solid #00FF00;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+        }
+        .char-input:focus {
+            background-color: #003300;
+            outline: none;
+            box-shadow: 0 0 5px #00FF00;
+        }
+        #secret-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 30px;
+            height: 30px;
+            opacity: 0;
+            z-index: 9999;
+            cursor: default; /* Keep it subtle */
+        }
+        .input-correct {
+            border-color: #00FF00 !important;
+            background-color: #003300 !important;
+            color: #00FF00 !important;
+        }
+        .input-incorrect {
+            border-color: #FF0000 !important;
+            background-color: #330000 !important;
+            color: #FF0000 !important;
+        }
+        button.start-btn {
+            background-color: #00FF00;
+            color: #000;
+            font-size: 24px;
+            padding: 15px 30px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: block;
+            margin: 20px auto;
+            text-transform: uppercase;
+        }
+        button.start-btn:hover {
+            background-color: #00CC00;
+            box-shadow: 0 0 15px #00FF00;
+        }
+        .learning-point {
+            text-align: left;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #00FF00;
+            background-color: rgba(0, 50, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div id="secret-nav" onclick="cycleStages()"></div>
+
+<div class="container">
+    
+    <!-- LANDING PAGE -->
+    <div id="landing-screen" style="text-align: center;">
+        <h1>🛡️ OPERATION: FIREWALL BETA 🛡️</h1>
+        <h2>Cybersecurity Training Module</h2>
+        <p style="font-size: 1.2em; margin: 20px 0;">
+            Welcome, Recruits. <br><br>
+            A.R.I.A., our central mainframe, has gone into lockdown mode to simulate a massive cyber-attack. 
+            Your team must work together to bypass security protocols, decrypt data, and restore system access before the data purge is complete.
+        </p>
+        <p><strong>OBJECTIVES:</strong></p>
+        <ul style="list-style: none; padding: 0;">
+            <li>🔸 Decode Biometric Protocols</li>
+            <li>🔸 Hack the command line</li>
+            <li>🔸 Calculate Encryption Keys</li>
+            <li>🔸 Verify Admin Identity</li>
+        </ul>
+        <button class="start-btn" onclick="startMission()">START MISSION</button>
+    </div>
+
+    <!-- GAME INTERFACE (Initially Hidden) -->
+    <div id="game-interface" class="hidden">
+        <h1>🚨 A.R.I.A. SYSTEM LOCKDOWN 🚨</h1>
+        <h2>Objective: Manual Core Override & Reboot</h2>
+        <p style="text-align: center; color: #FF0000; font-weight: bold; font-size: 1.2em;">
+            🚨 STATUS: Data Purge in T-MINUS <span id="timer">--:--</span> 🚨
+        </p>
+        <p>You are elite SysAdmins. The central server, <strong>A.R.I.A.</strong>, has locked the network. Bypass the four security layers to save the company data!</p>
+
+    <div id="stage1" class="stage">
+        <h3>🔓 STAGE 1: The Biometric Login</h3>
+        <p>A.R.I.A. displays: <em>"Biometric scan failed. Manual override engaged. Answer the following protocol questions to generate the temporary admin password. Take the <strong>first letter</strong> of each answer."</em></p>
+        <ol style="list-style: none; padding-left: 0;">
+            <li><strong>Q1:</strong> I am a type of network that connects computers within a limited area, such as a school or office. What is the three-letter acronym for this?</li>
+            <li><strong>Q2:</strong> In programming, this is a set of instructions designed to perform a specific task. It is the "recipe" the computer follows.</li>
+            <li><strong>Q3:</strong> This unit of digital information storage is equal to 1,024 gigabytes.</li>
+            <li><strong>Q4:</strong> This is the process of converting information or data into a code, especially to prevent unauthorized access.</li>
+            <li><strong>Q5:</strong> This concept refers to a group of two or more computer systems linked together.</li>
+            <li><strong>Q6:</strong> This is a hardware or software component that stores data so that future requests for that data can be served faster. Browsers use this to load pages quickly.</li>
+            <li><strong>Q7:</strong> This famous computer bug was a fear that computers would stop working when the date changed from December 31, 1999, to January 1, 2000.</li>
+        </ol>
+        <div id="stage1-inputs" class="input-group">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+        </div>
+        <button onclick="checkPass1()">SUBMIT PROTOCOL PASSWORD</button>
+        <div id="feedback1" class="feedback"></div>
+    </div>
+
+    <div id="stage2" class="stage hidden">
+        <h3>🔥 STAGE 2: The Firewall</h3>
+        <p>A.R.I.A. prompts: *"Password accepted. Firewall Active. Input the 5-letter command to cease defensive protocols."*</p>
+        <p style="color: #FFD700;">(This is a Wordle-style challenge. Enter a 5-letter word and the console will give you color feedback: Green = Correct letter/position, Yellow = Correct letter/wrong position.)</p>
+        
+        <div id="wordle-grid">
+            </div>
+
+        <div id="wordle-input-container" class="input-group">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+        </div>
+        <button onclick="submitWordleGuess()">SUBMIT COMMAND</button>
+        <div id="feedback2" class="feedback"></div>
+    </div>
+
+    <div id="stage3" class="stage hidden">
+        <h3>💻 STAGE 3: The Authentication Matrix (Dev Challenge)</h3>
+        <p>A.R.I.A. prompts: <em>"Encryption key accepted. Manual calculation is required using runtime metrics. Solve the two computational challenges to derive the verification keys (K1, K2). Combine the two integer answers (three digits each) to form the final 6-digit key."</em></p>
+        
+        <h4>Problem A: Bitwise Register Check (K1)</h4>
+        <p>The initial state is <strong>A = 40 (Decimal)</strong>. What is the final decimal value of A after the following sequence of bitwise operations?</p>
+        
+        <ol style="text-align: left; margin-left: 20px;">
+            <li><strong>Shift Right:</strong> A is shifted right by 1 bit. (Operation: A >> 1)</li>
+            <li><strong>Bitwise AND:</strong> A is compared with the number 6. (Operation: A & 6)</li>
+            <li><strong>Bitwise XOR:</strong> A is compared with the number 15. (Operation: A ^ 15)</li>
+        </ol>
+        <p>Answer K1: &rarr; <strong>(3 Digits)</strong></p>
+
+        <h4>Problem B: Max Subarray Sum (K2)</h4>
+        <p>Find the maximum possible sum of a <strong>contiguous subarray</strong> within the following array of integers:</p>
+        
+        <p style="text-align: center; font-size: 1.2em; color: #FFFF00;">Data = [-2, 1, -3, 4, -1, 2, 1, -5, 4]</p>
+        
+        <p style="font-size: 0.9em; text-align: center; color: #008000;">(Hint: This is a classic algorithm problem.)</p>
+        <p>Answer K2: &rarr; <strong>(3 Digits)</strong></p>
+
+        <div id="stage3-inputs" class="input-group">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+            <input type="text" class="char-input" maxlength="1">
+        </div>
+        <button onclick="checkPass3()">SUBMIT ACCESS KEY</button>
+        <div id="feedback3" class="feedback"></div>
+    </div>
+
+    <div id="stage4" class="stage hidden">
+        <h3>🗣️ STAGE 4: Voice Verification</h3>
+        <p>A.R.I.A. prompts: *"Encryption key accepted. Final Security Layer: Voice Verification. Confirm you are human by identifying these three relics of user interaction."*</p>
+        <ul id="riddles-list" style="list-style: none; padding: 0;">
+            <li>
+                <p><strong>Riddle 1:</strong> "I have keys, but no locks. I have a space, but no room. You can enter, but never go outside. What am I?"</p>
+                <input type="text" id="pass4_1" placeholder="Answer 1" style="width: 60%;"> <span id="feedback4_1" class="feedback"></span>
+            </li>
+            <li>
+                <p><strong>Riddle 2:</strong> "I have a tail but no body. I move around but have no legs. I have no voice, but I click to make a choice. What am I?"</p>
+                <input type="text" id="pass4_2" placeholder="Answer 2" style="width: 60%;"> <span id="feedback4_2" class="feedback"></span>
+            </li>
+            <li>
+                <p><strong>Riddle 3:</strong> "I have a face but no eyes. I have hands but no arms. I tell you when the deadline is near. What am I?"</p>
+                <input type="text" id="pass4_3" placeholder="Answer 3" style="width: 60%;"> <span id="feedback4_3" class="feedback"></span>
+            </li>
+        </ul>
+        <button onclick="checkPass4()">SUBMIT VERIFICATION</button>
+        <div id="feedback4_final" class="feedback"></div>
+    </div>
+
+    <div id="debrief-screen" class="stage hidden" style="border-color: #FFD700; background-color: rgba(50, 50, 0, 0.4);">
+        <h3 id="debrief-header">✅ SYSTEM REBOOT SUCCESSFUL!</h3>
+        <p id="debrief-message" style="font-size: 20px; color: #FFFF00;">**A.R.I.A. is now operational.**</p>
+        
+        <h4>📁 MISSION DEBRIEF: KEY LEARNINGS</h4>
+        <div class="learning-point">
+            <strong>1. LATENCY (Networking):</strong> The delay before a transfer of data begins following an instruction. Low latency is crucial for real-time applications.
+        </div>
+        <div class="learning-point">
+            <strong>2. ALGORITHMS (Wordle/Logic):</strong> Breaking down complex problems into smaller steps and using pattern recognition (like in Wordle) is the core of computational thinking.
+        </div>
+        <div class="learning-point">
+            <strong>3. BINARY & CHECKSIES (Math):</strong> Understanding binary (0s and 1s) and verification sums (like the subarray problem) is fundamental to data integrity and encryption.
+        </div>
+        <div class="learning-point">
+            <strong>4. PHYSICAL SECURITY (Riddles):</strong> Cybersecurity isn't just code; it involves physical hardware (Keyboards, Mice) and time management (Clock).
+        </div>
+
+        <button onclick="location.reload()" style="margin-top: 20px;">REPLAY MISSION</button>
+    </div>
+
+    <div id="failureScreen" class="stage hidden" style="border-color: #FF0000; background-color: rgba(50, 0, 0, 0.4);">
+        <h3>⚠️ MISSION FAILED ⚠️</h3>
+        <p style="font-size: 20px; color: #FF0000;">**DATA PURGE COMPLETE**</p>
+        <p>The system lockdown was not bypassed in time. All company data has been erased.</p>
+        <button onclick="location.reload()">RETRY MISSION</button>
+        <button onclick="showDebrief(false)">VIEW MISSION REPORT</button>
+    </div>
+
+    </div>
+</div>
+
+<script>
+    const TIMER_DURATION_MINUTES = 40;
+
+    // --- STAGE 1: TRIVIA (LATENCY) ---
+    const targetPass1 = "LATENCY";
+    function checkPass1() {
+        const container = document.getElementById('stage1-inputs');
+        const inputs = Array.from(container.querySelectorAll('input'));
+        let allCorrect = true;
+        
+        inputs.forEach((input, index) => {
+            const char = input.value.toUpperCase().trim();
+            if (char === targetPass1[index]) {
+                input.classList.add('input-correct');
+                input.classList.remove('input-incorrect');
+            } else {
+                input.classList.add('input-incorrect');
+                input.classList.remove('input-correct');
+                allCorrect = false;
+            }
+        });
+
+        const feedback = document.getElementById('feedback1');
+        if (allCorrect) {
+            feedback.className = 'feedback success';
+            feedback.innerHTML = 'ACCESS GRANTED. Moving to Firewall.';
+            document.getElementById('stage1').classList.add('hidden');
+            document.getElementById('stage2').classList.remove('hidden');
+            setupWordle();
+        } else {
+            feedback.className = 'feedback error';
+            feedback.innerHTML = 'SECURITY ALERT: Protocol Mismatch. Try again.';
+        }
+    }
+
+    // --- STAGE 2: WORDLE ---
+    const techWords = ["LOGIN", "QUERY", "STACK", "BYTES", "TOKEN", "ADMIN", "DEBUG", "LINUX", "VIRUS"];
+    let targetWordle = "";
+    const maxGuesses = 6;
+    let currentGuess = 0;
+    const wordleGrid = document.getElementById('wordle-grid');
+
+    function setupWordle() {
+        // Pick random word
+        targetWordle = techWords[Math.floor(Math.random() * techWords.length)];
+        // console.log("Debug Target:", targetWordle); 
+
+        // Reset State
+        currentGuess = 0;
+        const container = document.getElementById('wordle-input-container');
+        const inputs = container.querySelectorAll('input');
+        inputs.forEach(i => {
+            i.value = '';
+            i.disabled = false;
+        });
+        inputs[0].focus();
+        
+        const feedback = document.getElementById('feedback2');
+        feedback.className = 'feedback';
+        feedback.innerHTML = '';
+
+        // Build Grid
+        wordleGrid.innerHTML = '';
+        for (let i = 0; i < maxGuesses; i++) {
+            for (let j = 0; j < 5; j++) {
+                const cell = document.createElement('div');
+                cell.classList.add('wordle-letter');
+                cell.id = `cell-${i}-${j}`;
+                wordleGrid.appendChild(cell);
+            }
+        }
+    }
+
+    function submitWordleGuess() {
+        const inputElement = document.getElementById('wordle-input-container');
+        const guess = getGroupValue('wordle-input-container');
+        const feedback = document.getElementById('feedback2');
+
+        if (guess.length !== 5) {
+            feedback.className = 'feedback error';
+            feedback.innerHTML = 'Command must be 5 letters.';
+            return;
+        }
+
+        if (currentGuess >= maxGuesses) {
+            feedback.className = 'feedback error';
+            feedback.innerHTML = 'Maximum attempts reached. System Failure imminent.';
+            return;
+        }
+
+        if (guess === targetWordle) {
+            // Success
+            for (let j = 0; j < 5; j++) {
+                document.getElementById(`cell-${currentGuess}-${j}`).textContent = guess[j];
+                document.getElementById(`cell-${currentGuess}-${j}`).classList.add('green');
+            }
+            feedback.className = 'feedback success';
+            feedback.innerHTML = 'FIREWALL BREACHED. Advancing to Encryption.';
+            document.querySelectorAll('#wordle-input-container input').forEach(i => i.disabled = true);
+            setTimeout(() => {
+                document.getElementById('stage2').classList.add('hidden');
+                document.getElementById('stage3').classList.remove('hidden');
+            }, 1500);
+            return;
+        }
+
+        // Process Guess
+        let targetLetters = targetWordle.split('');
+        let guessLetters = guess.split('');
+        let colors = Array(5).fill('grey');
+
+        // First pass: Find Greens (Exact Match)
+        for (let i = 0; i < 5; i++) {
+            if (guessLetters[i] === targetLetters[i]) {
+                colors[i] = 'green';
+                targetLetters[i] = null; // Mark as used
+            }
+        }
+
+        // Second pass: Find Yellows (Correct Letter, Wrong Position)
+        for (let i = 0; i < 5; i++) {
+            if (colors[i] !== 'green') {
+                const targetIndex = targetLetters.indexOf(guessLetters[i]);
+                if (targetIndex !== -1) {
+                    colors[i] = 'yellow';
+                    targetLetters[targetIndex] = null; // Mark as used
+                }
+            }
+        }
+
+        // Update Grid
+        for (let j = 0; j < 5; j++) {
+            const cell = document.getElementById(`cell-${currentGuess}-${j}`);
+            cell.textContent = guess[j];
+            cell.classList.add(colors[j]);
+        }
+
+        currentGuess++;
+        document.querySelectorAll('#wordle-input-container input').forEach(i => i.value = '');
+        document.querySelector('#wordle-input-container input').focus();
+
+        if (currentGuess < maxGuesses) {
+            feedback.className = 'feedback';
+            feedback.innerHTML = `Attempt ${currentGuess} of ${maxGuesses} complete.`;
+        } else {
+            feedback.className = 'feedback error';
+            feedback.innerHTML = `ATTEMPTS FAILED. The correct word was ${targetWordle}. SYSTEM FAILURE.<br><button onclick="setupWordle()">RETRY CONNECTION</button>`;
+            document.querySelectorAll('#wordle-input-container input').forEach(i => i.disabled = true);
+        }
+    }
+
+    // --- STAGE 3: COMPUTATIONAL (011006) ---
+    const targetPass3 = "011006"; // K1=011 (Bitwise) + K2=006 (Subarray Sum)
+    function checkPass3() {
+        const container = document.getElementById('stage3-inputs');
+        const inputs = Array.from(container.querySelectorAll('input'));
+        let allCorrect = true;
+
+        inputs.forEach((input, index) => {
+            const char = input.value.toUpperCase().trim();
+            if (char === targetPass3[index]) {
+                input.classList.add('input-correct');
+                input.classList.remove('input-incorrect');
+            } else {
+                input.classList.add('input-incorrect');
+                input.classList.remove('input-correct');
+                allCorrect = false;
+            }
+        });
+
+        const feedback = document.getElementById('feedback3');
+        if (allCorrect) {
+            feedback.className = 'feedback success';
+            feedback.innerHTML = 'ACCESS KEY ACCEPTED. Commencing Human Verification.';
+            document.getElementById('stage3').classList.add('hidden');
+            document.getElementById('stage4').classList.remove('hidden');
+        } else {
+            feedback.className = 'feedback error';
+            feedback.innerHTML = 'KEY MISMATCH. Check your calculations (Bitwise and Subarray Sum).';
+        }
+    }
+
+    // --- STAGE 4: RIDDLES (KEYBOARD, MOUSE, CLOCK) ---
+    const answers = [
+        ["KEYBOARD"],
+        ["MOUSE", "COMPUTER MOUSE"],
+        ["CLOCK", "WATCH"]
+    ];
+
+    function checkPass4() {
+        let allCorrect = true;
+
+        for (let i = 0; i < 3; i++) {
+            const input = document.getElementById(`pass4_${i+1}`).value.toUpperCase().trim();
+            const feedback = document.getElementById(`feedback4_${i+1}`);
+            
+            if (answers[i].includes(input)) {
+                feedback.innerHTML = "✅";
+                feedback.className = "feedback success";
+            } else {
+                feedback.innerHTML = "❌";
+                feedback.className = "feedback error";
+                allCorrect = false;
+            }
+        }
+
+        const finalFeedback = document.getElementById('feedback4_final');
+        if (allCorrect) {
+             finalFeedback.innerHTML = 'VOICE VERIFICATION PASSED. CORE OVERRIDE COMPLETE.';
+             finalFeedback.className = 'feedback success';
+             setTimeout(() => {
+                document.getElementById('stage4').classList.add('hidden'); // Hide last stage
+                document.getElementById('game-interface').classList.add('hidden'); // Hide container
+                showDebrief(true);
+             }, 1500);
+        } else {
+             finalFeedback.innerHTML = 'VERIFICATION FAILED. Identify the correct relics.';
+             finalFeedback.className = 'feedback error';
+        }
+    }
+
+    // --- MISC & INIT ---
+    function showDebrief(isSuccess) {
+        // Hide failure screen if coming from there
+        document.getElementById('failureScreen').classList.add('hidden');
+        document.getElementById('game-interface').classList.add('hidden');
+        
+        const debrief = document.getElementById('debrief-screen');
+        const header = document.getElementById('debrief-header');
+        const message = document.getElementById('debrief-message');
+        
+        debrief.classList.remove('hidden');
+        
+        if (isSuccess) {
+            debrief.style.borderColor = "#FFD700"; // Gold
+            header.innerHTML = "✅ SYSTEM REBOOT SUCCESSFUL!";
+            header.style.color = "#FFD700";
+            message.innerHTML = "**A.R.I.A. is now operational.**<br>Congratulations! You have successfully bypassed the system lockdown.";
+            message.style.color = "#FFFF00";
+        } else {
+            debrief.style.borderColor = "#FF0000"; // Red
+            header.innerHTML = "⚠️ MISSION PARTIALLY FAILED";
+            header.style.color = "#FF0000";
+            message.innerHTML = "**DATA PURGE COMPLETE.**<br>However, the learning objectives are still valuable for next time.";
+            message.style.color = "#FF8888"; // Light red
+        }
+    }
+
+    function startMission() {
+        document.getElementById('landing-screen').classList.add('hidden');
+        document.getElementById('game-interface').classList.remove('hidden');
+        startTimer(TIMER_DURATION_MINUTES * 60);
+    }
+
+    // Initial setup on load
+    document.addEventListener('DOMContentLoaded', () => {
+        setupWordle();
+        setupAutoAdvance('stage1-inputs');
+        setupAutoAdvance('wordle-input-container');
+        setupAutoAdvance('stage3-inputs');
+        // Timer starts in startMission() now
+        
+        // Render initial static timer
+        const minutes = TIMER_DURATION_MINUTES < 10 ? "0" + TIMER_DURATION_MINUTES : TIMER_DURATION_MINUTES;
+        document.querySelector('#timer').textContent = minutes + ":00";
+    });
+
+    function startTimer(duration) {
+        let timer = duration, minutes, seconds;
+        const display = document.querySelector('#timer');
+        
+        // Immediate update to show start time
+        updateDisplay();
+        
+        const intervalId = setInterval(function () {
+            if (--timer < 0) {
+                // Timer expired
+                clearInterval(intervalId);
+                display.textContent = "00:00";
+                
+                // Hide all stages
+                document.querySelectorAll('.stage').forEach(el => el.classList.add('hidden'));
+                // Show failure screen
+                document.getElementById('failureScreen').classList.remove('hidden');
+                // Ensure game interface is hidden if it wasn't already (though stages are hidden)
+                document.getElementById('game-interface').classList.add('hidden');
+                
+                return;
+            }
+            updateDisplay();
+        }, 1000);
+
+        function updateDisplay() {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            display.textContent = minutes + ":" + seconds;
+        }
+    }
+
+    // Helper functions for new inputs
+    function setupAutoAdvance(containerId) {
+        const container = document.getElementById(containerId);
+        if(!container) return;
+        const inputs = container.querySelectorAll('input');
+        
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length >= 1) {
+                    if (index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                }
+            });
+            
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value === '') {
+                    if (index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                } else if (e.key === 'Enter') {
+                    // Start verification on Enter if it's the last box or strictly prefer button?
+                    // Let's keep button for now to be safe.
+                }
+            });
+
+             // Allow pasting
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text').toUpperCase().trim();
+                const inputsArr = Array.from(inputs);
+                let currentIdx = index;
+                
+                for (let char of text) {
+                    if (currentIdx < inputsArr.length) {
+                        inputsArr[currentIdx].value = char;
+                        currentIdx++;
+                    }
+                }
+                if (currentIdx < inputsArr.length) {
+                    inputsArr[currentIdx].focus();
+                } else {
+                    inputsArr[inputsArr.length - 1].focus();
+                }
+            });
+        });
+    }
+
+    function getGroupValue(containerId) {
+        const container = document.getElementById(containerId);
+        if(!container) return "";
+        return Array.from(container.querySelectorAll('input')).map(i => i.value).join('').toUpperCase();
+    }
+
+    // --- SECRET NAVIGATION ---
+    function cycleStages() {
+        // Only cycle through GAME stages.
+        // If we are on Landing, jump to Game.
+        // If we are on Debrief or Failure, jump back to Landing (or Game).
+        
+        const landing = document.getElementById('landing-screen');
+        const game = document.getElementById('game-interface');
+        
+        if (!landing.classList.contains('hidden')) {
+            // Start the game logic properly if skipping landing
+            startMission();
+            return;
+        }
+        
+        // If game is hidden (we are in debrief/fail), reset to landing
+        if (game.classList.contains('hidden')) {
+             location.reload(); 
+             return;
+        }
+
+        // Cycle internal stages
+        const stages = ['stage1', 'stage2', 'stage3', 'stage4'];
+        const currentVisibleIndex = stages.findIndex(id => !document.getElementById(id).classList.contains('hidden'));
+        
+        // Hide current
+        if (currentVisibleIndex !== -1) {
+            document.getElementById(stages[currentVisibleIndex]).classList.add('hidden');
+        }
+
+        // Show next
+        let nextIndex = 0;
+        if (currentVisibleIndex !== -1) {
+            nextIndex = (currentVisibleIndex + 1) % stages.length; // Loop back to Stage 1
+        }
+        
+        const nextId = stages[nextIndex];
+        document.getElementById(nextId).classList.remove('hidden');
+
+        if (nextId === 'stage2') {
+             // Ensure wordle is setup if jumping into it
+             // setupWordle(); // Already called in init, but safe to recall if needed
+        }
+    }
+
+</script>
+
+</body>
+</html>
